@@ -192,7 +192,7 @@ public class ChromeTest {
                     new File(webpFile.getAbsolutePath()).delete();
                     // webp转成png
                     try {
-                        Pictures1.webpToPng(dest.getAbsolutePath(),
+                        PictureUtils.webpToPng(dest.getAbsolutePath(),
                                 "E:\\private\\pics\\" + name + "\\" + title + "\\" + String.format("%03d", i + 1) + ".png");
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
