@@ -110,18 +110,24 @@ public class Pictures {
         return null;
     }
 
-    // 微信图片
     @Test
-    public void Demo1() throws Exception{
+    public void Demo0() throws Exception {
+        Demo1("https://mp.weixin.qq.com/s/LR4uKFMzSZe6UBEd30DG_A", "D:\\private\\pictures\\best\\古力娜扎\\000", "092");
+        Demo1("https://mp.weixin.qq.com/s/bqf13JUkf4uG4UA2_DLSyA", "D:\\private\\pictures\\best\\迪丽热巴\\000", "017");
+        // Demo1("", "D:\\private\\pictures\\best\\张予曦\\000", "011");
+        // Demo1("", "D:\\private\\pictures\\best\\陈瑶\\000", "002");
+        // Demo1("", "D:\\private\\pictures\\best\\陈都灵\\000", "002");
+    }
+
+    // 微信图片
+    public void Demo1(String uri, String path, String fileName) throws Exception{
         Pictures t = new Pictures();
         Document doc = null;
-        String ss = "D:\\private\\pictures\\best\\张予曦\\000";
-        String s1 = "https://mp.weixin.qq.com/s/VPmBh-NHbKlzyeMsoLm9Ig";
         FileOutputStream fos = null;
-        doc = t.getDocument(s1);
+        doc = t.getDocument(uri);
         Elements e1 = doc.select("#js_content").select("section").select("img");
 
-        File dir = new File(ss, "003");
+        File dir = new File(path, fileName);
         if (!dir.exists()) {
             dir.mkdirs();
         }
@@ -157,7 +163,7 @@ public class Pictures {
             } finally {
                 if (fos != null) {
                     fos.close();
-                    //					Thread.sleep(100);
+                    // Thread.sleep(100);
                 }
 
             }
