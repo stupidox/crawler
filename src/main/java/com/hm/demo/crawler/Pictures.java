@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.alibaba.fastjson2.JSON;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -23,6 +24,9 @@ import org.jsoup.select.Elements;
 import org.junit.Test;
 
 public class Pictures {
+
+    static boolean append = false;
+
     /**
      * 现在很多站点都是SSL对数据传输进行加密，这也让普通的HttpConnection无法正常的获取该页面的内容，
      * 而Jsoup起初也对此没有做出相应的处理， 
@@ -112,15 +116,35 @@ public class Pictures {
 
     @Test
     public void Demo0() throws Exception {
-        Demo1("https://mp.weixin.qq.com/s/LR4uKFMzSZe6UBEd30DG_A", "D:\\private\\pictures\\best\\古力娜扎\\000", "092");
-        Demo1("https://mp.weixin.qq.com/s/bqf13JUkf4uG4UA2_DLSyA", "D:\\private\\pictures\\best\\迪丽热巴\\000", "017");
-        // Demo1("", "D:\\private\\pictures\\best\\张予曦\\000", "011");
-        // Demo1("", "D:\\private\\pictures\\best\\陈瑶\\000", "002");
-        // Demo1("", "D:\\private\\pictures\\best\\陈都灵\\000", "002");
+        Demo1("", "D:\\private\\pictures\\best\\范冰冰\\000", "020");
+        Demo1("", "D:\\private\\pictures\\best\\古力娜扎\\000", "099");
+        Demo1("", "D:\\private\\pictures\\best\\迪丽热巴\\000", "044");
+        Demo1("", "D:\\private\\pictures\\best\\陈都灵\\000", "009");
+        Demo1("", "D:\\private\\pictures\\best\\陈瑶\\000", "002");
+        Demo1("", "D:\\private\\pictures\\best\\程潇\\000", "004");
+        Demo1("", "D:\\private\\pictures\\best\\景甜\\000", "046");
+        Demo1("", "D:\\private\\pictures\\best\\Lisa\\000", "002");
+        Demo1("", "D:\\private\\pictures\\best\\高圆圆\\000", "004");
+        Demo1("", "D:\\private\\pictures\\best\\刘诗诗\\000", "043");
+        Demo1("", "D:\\private\\pictures\\best\\刘亦菲\\000", "015");
+        Demo1("", "D:\\private\\pictures\\best\\柳智敏\\000", "006");
+        Demo1("", "D:\\private\\pictures\\best\\申有娜\\000", "002");
+        Demo1("", "D:\\private\\pictures\\best\\唐嫣\\000", "002");
+        Demo1("", "D:\\private\\pictures\\best\\杨幂\\000", "009");
+        Demo1("", "D:\\private\\pictures\\best\\杨颖\\000", "002");
+        Demo1("", "D:\\private\\pictures\\best\\张靓颖\\000", "002");
+        Demo1("", "D:\\private\\pictures\\best\\张元英\\000", "011");
+        Demo1("", "D:\\private\\pictures\\best\\张予曦\\000", "020");
+        Demo1("", "D:\\private\\pictures\\best\\赵今麦\\000", "007");
+        Demo1("", "D:\\private\\pictures\\best\\朱珠\\000", "002");
+        Demo1("", "D:\\private\\pictures\\0wa33", "001");
     }
 
     // 微信图片
     public void Demo1(String uri, String path, String fileName) throws Exception{
+        if (StringUtils.isEmpty(uri.trim())) {
+            return;
+        }
         Pictures t = new Pictures();
         Document doc = null;
         FileOutputStream fos = null;
@@ -135,11 +159,11 @@ public class Pictures {
         for (Element element : e1) {
             String imgUrl = element.attr("data-src");
             try {
-                File file = new File(dir,  String.format("%03d", j) + ".jpg");
-                if (file.exists()) {
-                    j++;
-                    continue;
+                while (new File(dir,  String.format("%03d", j) + ".jpg").exists() ||
+                        new File(dir,  String.format("%03d", j) + ".png").exists()) {
+                    ++j;
                 }
+                File file = new File(dir,  String.format("%03d", j) + ".jpg");
                 // 下载网络文件
                 int byteread = 0;
                 URL url;
@@ -168,7 +192,14 @@ public class Pictures {
 
             }
         }
-
+        WindowsUtils.openDir(dir);
+        // 用到的目录路径写入文件
+        if (!append) {
+            WindowsUtils.writeToFile(dir, "D:\\private\\dirs.txt", false);
+            append = true;
+        } else {
+            WindowsUtils.writeToFile(dir, "D:\\private\\dirs.txt", true);
+        }
         System.out.println("End");
     }
 }

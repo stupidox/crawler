@@ -89,7 +89,7 @@ public class NovelZSTDNextPage {
             //设置从主机读取数据超时（单位：毫秒）
             connection.setReadTimeout(90000);
             //开始请求
-            Document doc = Jsoup.parse(connection.getInputStream(), "UTF-8", uri);
+            Document doc = Jsoup.parse(connection.getInputStream(), "GBK", uri);
             //TODO ---
             // return Jsoup.connect(uri).timeout(90000).get();
             return doc;
@@ -101,24 +101,13 @@ public class NovelZSTDNextPage {
         }
     }
 
-    public static byte[] hexStringToBytes(String hex) {
-        byte[] bytes = new byte[hex.length() / 2];
-        for (int i = 0; i < bytes.length; i++) {
-            bytes[i] = (byte) Integer.parseInt(hex.substring(i * 2, i * 2 + 2), 16);
-        }
-        return bytes;
-    }
-
     // 搜索
     @Test
     public void Demo1() throws Exception {
-
         NovelZSTDNextPage t = new NovelZSTDNextPage();
-        Document doc = null;
-        String index = "https://www.zhuoshuge.com/book/29069/7342665.html";
-        String pre = "https://www.zhuoshuge.com"; //搜索id
-        File novel = new File("F:\\temp\\反派：我的母亲是大帝-乐福不受.txt");
-        download(t, pre, "/book/29069/7342665.html", "", novel);
+        String pre = "https://www.bazong.cc";
+        File novel = new File("F:\\temp\\柯南泡妞录-我爱慕容淑.txt");
+        download(t, pre, "/book/166212/3036198.html", "", novel);
 
         // 分页
         System.out.println("End");
@@ -127,10 +116,15 @@ public class NovelZSTDNextPage {
     private void download(NovelZSTDNextPage t, String pre, String contentUrl, String lastTitle, File novel) throws Exception {
         Document page;
         page = t.get(pre + contentUrl);
-        Elements contentPage = page.select("#novelbody");
+        Elements contentPage = page.select("#center");
         if (!contentPage.isEmpty()) {
-            String nextContentUrl = contentPage.select("#next1").attr("data");
-            String title = contentPage.select("#chaptername").text();
+            String nextContentUrl = contentPage.select(".jump a").last().attr("href");
+            if (nextContentUrl.indexOf("/") <= 0) {
+                return;
+            }
+            nextContentUrl = nextContentUrl.substring(nextContentUrl.indexOf("/"), nextContentUrl.lastIndexOf("'"));
+
+            String title = contentPage.select(".title h1").text();
             System.out.println(title);
             if (title.contains("-《")) {
                 title = title.substring(0, title.indexOf("-《"));
@@ -138,14 +132,21 @@ public class NovelZSTDNextPage {
                 System.err.println(title);
             }
             FileOutputStream otStream = new FileOutputStream(novel, true);
-            if (!title.equals(lastTitle)) {
+            if (lastTitle.isEmpty() || !title.startsWith(lastTitle)) {
                 otStream.write("\n\n  ".getBytes());
                 otStream.write(title.getBytes());
                 otStream.write("\n\n  ".getBytes());
                 otStream.flush();
+
+                if (lastTitle.isEmpty()) {
+                    lastTitle = title;
+                }
             }
 
-            String content = contentPage.select("#novelcontent").html();
+            String content = contentPage.select("#content").html();
+
+            /*
+            // Base64转码
             Pattern pattern = Pattern.compile("qsbs\\.bb\\('.*'\\)");
             Matcher matcher = pattern.matcher(content);
             StringBuilder sb = new StringBuilder();
@@ -158,7 +159,16 @@ public class NovelZSTDNextPage {
                 }
             }
             content = sb.toString();
-            content = content.replaceAll("<style>.*</style>", "").replaceAll("<p .*</p>", "").replaceAll("<p>([^<]*)</p>", "$1\n");
+
+             */
+            content = content.replaceAll("<style>.*</style>", "").replaceAll("<p .*</p>", "").replaceAll("<p>([^<]*)</p>", "$1\n")
+                    .replaceAll("<br\\s*/><br\\s*/>", "\n").replaceAll("<br\\s*><br\\s*>", "\n")
+                    .replaceAll("<font[^莎]*</script>", "");
+            int lastn = content.lastIndexOf("\n");
+            // 去掉结尾空格
+            if (lastn > 0) {
+                content = content.substring(0, lastn);
+            }
             otStream.write(content.getBytes());
             otStream.flush();
             otStream.close();
