@@ -1,20 +1,5 @@
 package com.hm.demo.crawler;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-
-import com.alibaba.fastjson2.JSON;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -22,6 +7,14 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.junit.Test;
+
+import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Pictures {
 
@@ -116,32 +109,33 @@ public class Pictures {
 
     @Test
     public void Demo0() throws Exception {
-        Demo1("", "D:\\private\\pictures\\best\\范冰冰\\000", "020");
-        Demo1("", "D:\\private\\pictures\\best\\古力娜扎\\000", "099");
-        Demo1("", "D:\\private\\pictures\\best\\迪丽热巴\\000", "044");
-        Demo1("", "D:\\private\\pictures\\best\\陈都灵\\000", "009");
-        Demo1("", "D:\\private\\pictures\\best\\陈瑶\\000", "002");
-        Demo1("", "D:\\private\\pictures\\best\\程潇\\000", "004");
-        Demo1("", "D:\\private\\pictures\\best\\景甜\\000", "046");
-        Demo1("", "D:\\private\\pictures\\best\\Lisa\\000", "002");
-        Demo1("", "D:\\private\\pictures\\best\\高圆圆\\000", "004");
-        Demo1("", "D:\\private\\pictures\\best\\刘诗诗\\000", "043");
-        Demo1("", "D:\\private\\pictures\\best\\刘亦菲\\000", "015");
-        Demo1("", "D:\\private\\pictures\\best\\柳智敏\\000", "006");
-        Demo1("", "D:\\private\\pictures\\best\\申有娜\\000", "002");
-        Demo1("", "D:\\private\\pictures\\best\\唐嫣\\000", "002");
-        Demo1("", "D:\\private\\pictures\\best\\杨幂\\000", "009");
-        Demo1("", "D:\\private\\pictures\\best\\杨颖\\000", "002");
-        Demo1("", "D:\\private\\pictures\\best\\张靓颖\\000", "002");
-        Demo1("", "D:\\private\\pictures\\best\\张元英\\000", "011");
-        Demo1("", "D:\\private\\pictures\\best\\张予曦\\000", "020");
-        Demo1("", "D:\\private\\pictures\\best\\赵今麦\\000", "007");
-        Demo1("", "D:\\private\\pictures\\best\\朱珠\\000", "002");
-        Demo1("", "D:\\private\\pictures\\0wa33", "001");
+        Demo1("", "D:\\private\\pictures\\best\\范冰冰\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\古力娜扎\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\迪丽热巴\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\陈都灵\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\陈瑶\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\程潇\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\高圆圆\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\景甜\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\林志玲\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\Lisa\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\刘诗诗\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\刘亦菲\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\柳智敏\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\申有娜\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\唐嫣\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\杨幂\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\杨颖\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\张靓颖\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\张元英\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\张予曦\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\赵今麦\\000", true);
+        Demo1("", "D:\\private\\pictures\\best\\朱珠\\000", true);
+        Demo1("", "D:\\private\\pictures\\0wa33", false);
     }
 
     // 微信图片
-    public void Demo1(String uri, String path, String fileName) throws Exception{
+    public void Demo1(String uri, String path, boolean addNew) throws Exception{
         if (StringUtils.isEmpty(uri.trim())) {
             return;
         }
@@ -149,15 +143,52 @@ public class Pictures {
         Document doc = null;
         FileOutputStream fos = null;
         doc = t.getDocument(uri);
-        Elements e1 = doc.select("#js_content").select("section").select("img");
+        Elements e0 = doc.select("#js_content");
+        Elements e1 = null;
+        HashSet<String> urLSet = new LinkedHashSet<>(); // 自动去重
+
+        // 常规页面模式
+        e1 = e0.select("img");
+        for (Element element : e1) {
+            urLSet.add(element.attr("data-src"));
+        }
+
+        if (urLSet.isEmpty()) {
+            // 微信左右滑动图片模式
+            Pattern cdnUrlPattern = Pattern.compile(
+                    "cdn_url\\s*[:=]\\s*(['\"]+)(https[^'\"\\s,;}]+)\\1",
+                    Pattern.CASE_INSENSITIVE // 忽略大小写，匹配CDN_URL、Cdn_Url等
+            );
+
+            // 4. 匹配并提取非空的cdn_url值
+            Matcher matcher = cdnUrlPattern.matcher(doc.html());
+            while (matcher.find()) {
+                // group(2)是匹配到的cdn_url值（group(1)是单/双引号，忽略）
+                String cdnUrl = matcher.group(2).trim();
+                // 过滤空值（正则已限制非空，这里做双重保险）
+                if (!cdnUrl.isEmpty()) {
+                    urLSet.add(cdnUrl);
+                }
+            }
+        }
+
+        // 计算出最后一个文件夹名
+        String fileName;
+        File parentFile = new File(path);
+        File[] files = parentFile.listFiles();
+        List<File> newFiles = Arrays.asList(files).stream().sorted(Comparator.comparing(File::getName)).collect(Collectors.toList());
+        if (addNew) {
+            fileName = String.format("%03d", Integer.parseInt(newFiles.get(newFiles.size() - 1).getName()) + 1);
+        } else {
+            fileName = newFiles.get(newFiles.size() - 1).getName();
+        }
 
         File dir = new File(path, fileName);
         if (!dir.exists()) {
             dir.mkdirs();
         }
         int j = 1;
-        for (Element element : e1) {
-            String imgUrl = element.attr("data-src");
+        for (String imgUrl : urLSet) {
             try {
                 while (new File(dir,  String.format("%03d", j) + ".jpg").exists() ||
                         new File(dir,  String.format("%03d", j) + ".png").exists()) {
